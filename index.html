@@ -460,6 +460,12 @@
 
     .result-score strong { font-size: 24px; letter-spacing: -.05em; }
     .result-score span { color: var(--muted); font-size: 13px; }
+    .personal-best {
+      margin: -10px auto 23px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
     .result-screen .primary-btn { margin: 0 auto; }
 
     .bottom-note {
@@ -548,6 +554,7 @@
         <h1 id="result-title">¡Despegue perfecto!</h1>
         <p class="result-copy" id="result-copy"></p>
         <div class="result-score"><strong id="final-score">0</strong><span>de 10 respuestas correctas</span></div>
+        <p class="personal-best" id="personal-best"></p>
         <button class="primary-btn" id="restart-button" type="button">Jugar otra vez <span aria-hidden="true">↻</span></button>
       </div>
     </section>
@@ -630,6 +637,8 @@
       const feedbackEl = document.querySelector("#feedback");
       const nextButton = document.querySelector("#next-button");
       const restartButton = document.querySelector("#restart-button");
+      const personalBestEl = document.querySelector("#personal-best");
+      const personalBestKey = "orbita-personal-best";
       let current = 0;
       let score = 0;
       let answered = false;
@@ -696,6 +705,7 @@
         quizScreen.hidden = true;
         resultScreen.hidden = false;
         document.querySelector("#final-score").textContent = score;
+        updatePersonalBest();
         const percent = score / questions.length;
         const reactions = percent === 1
           ? ["🚀", "🌟", "🪐"]
@@ -722,6 +732,35 @@
         document.querySelector("#result-title").textContent = titles;
         document.querySelector("#result-copy").textContent = copy;
         restartButton.focus({ preventScroll: true });
+      }
+
+      function updatePersonalBest() {
+        let best;
+        try {
+          const stored = window.localStorage.getItem(personalBestKey);
+          const parsed = stored !== null && /^(0|[1-9]\d*)$/.test(stored) ? Number(stored) : null;
+          best = Number.isInteger(parsed) && parsed >= 0 && parsed <= questions.length
+            ? parsed
+            : null;
+        } catch {
+          personalBestEl.textContent = "Récord personal no disponible en este navegador.";
+          return;
+        }
+
+        if (best === null || score > best) {
+          try {
+            window.localStorage.setItem(personalBestKey, String(score));
+          } catch {
+            personalBestEl.textContent = "Récord personal no disponible en este navegador.";
+            return;
+          }
+          personalBestEl.textContent = best === null
+            ? `¡Tu primer récord personal: ${score} de ${questions.length}!`
+            : `¡Nuevo récord personal: ${score} de ${questions.length}!`;
+          return;
+        }
+
+        personalBestEl.textContent = `Récord personal: ${best} de ${questions.length}.`;
       }
 
       nextButton.addEventListener("click", () => {
